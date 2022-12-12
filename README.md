@@ -1,7 +1,7 @@
 # Drop Batch
 ![App Window](README_files/AppScreenshot.png)  
 Drag and drop image files on app window. These files shall be processed.
-### WARNING! Backup files, because they will be irreversibly modified!
+### WARNING! Backup files, because they will be irreversibly modified! Use with caution!
 
 ## Features
 * process files and directories dropped on app window,
