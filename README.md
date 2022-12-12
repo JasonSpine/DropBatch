@@ -1,11 +1,11 @@
 # Drop Batch
 ![App Window](README_files/AppScreenshot.png)  
 Drag and drop image files on app window. These files shall be processed.
-### WARNING! Backup files, because they will be irreversibly modified! Use with caution!
-
+### WARNING! Dropped files will be irreversibly modified! Use with caution!
+[Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.0/DropBatch.zip)
 ## Features
 * process files and directories dropped on app window,
-* all image files inside directory and subdirectories shall be processed,
+* all image files inside a directory and it's subdirectories shall be processed,
 * images are going to be resized to max size: 1800x1800 (keeping aspect ratio),
 * numbers in filenames will be replaced with fixed size strings, e.g. ``file 2.jpg`` => ``file 000002.jpg``,
 * you may choose which processing options will be applied to your images,
