@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
 	QMainWindow,
 	QLabel,
 	QCheckBox,
+	QSpinBox,
 )
 
 from PyQt5.QtCore import (
@@ -75,15 +76,23 @@ class Runnable(QRunnable):
 	def resize_image(self, imagePath):
 		img = QImage(imagePath)
 		
-		img = img.scaled(
-			self.jobDefinition.maxImageSize,
-			self.jobDefinition.maxImageSize,
-			Qt.KeepAspectRatio,
-			Qt.SmoothTransformation)
-			
-		img = img.convertToFormat(QImage.Format_Grayscale8)
-		#img = img.convertToFormat(QImage.Format_Grayscale16)
-		img.save(imagePath, quality = 88)
+		anyChanges = False
+		
+		if img.width() > self.jobDefinition.maxImageSize or img.height() > self.jobDefinition.maxImageSize:
+			img = img.scaled(
+				self.jobDefinition.maxImageSize,
+				self.jobDefinition.maxImageSize,
+				Qt.KeepAspectRatio,
+				Qt.SmoothTransformation)
+			anyChanges = True
+		
+		if self.jobDefinition.grayscaleChecked and not img.isGrayscale():
+			img = img.convertToFormat(QImage.Format_Grayscale8)
+			#img = img.convertToFormat(QImage.Format_Grayscale16)
+			anyChanges = True
+		
+		if anyChanges:
+			img.save(imagePath, quality = 88)
 	
 	def get_rename_filename(self, current_path):
 		file_path, file_name = os.path.split(current_path)
@@ -93,7 +102,7 @@ class Runnable(QRunnable):
 		return os.path.join(file_path, file_name)
 	
 	def process_filename_number(self, number_re_match):
-		return "%06d"%(int(number_re_match.group(0)),)
+		return "%04d"%(int(number_re_match.group(0)),)
 		
 class DropBatch(QMainWindow):
 	def __init__(self):
@@ -103,19 +112,32 @@ class DropBatch(QMainWindow):
 		self.setStyleSheet("background-color: darkblue; color: white;")
 		
 		self.setAcceptDrops(True)
-		#self.resize(350, 200)
-		self.setGeometry(20, 50, 350, 200)
+		#self.resize(350, 300)
+		self.setGeometry(20, 50, 350, 270)
 		
 		self.statusLabel = QLabel("Drag files and folders here!", self)
-		self.statusLabel.setGeometry(50, 20, 250, 30)
+		self.statusLabel.setGeometry(30, 20, 250, 30)
 		
-		self.renameCheckbox = QCheckBox("Rename", self)
-		self.renameCheckbox.setGeometry(50, 100, 250, 25)
+		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")', self)
+		self.renameCheckbox.setGeometry(30, 95, 320, 25)
 		self.renameCheckbox.setChecked(True)
 		
 		self.resizeCheckbox = QCheckBox("Resize", self)
-		self.resizeCheckbox.setGeometry(50, 130, 250, 25)
+		self.resizeCheckbox.setGeometry(30, 125, 270, 25)
 		self.resizeCheckbox.setChecked(True)
+		
+		maxImageSizeEditLabel = QLabel("Max width/height", self)
+		maxImageSizeEditLabel.setGeometry(40, 155, 200, 30)
+		
+		self.maxImageSizeEdit = QSpinBox(self)
+		self.maxImageSizeEdit.setGeometry(150, 150, 100, 40)
+		self.maxImageSizeEdit.setRange(200, 10000)
+		self.maxImageSizeEdit.setValue(1800)
+		self.maxImageSizeEdit.setSingleStep(100)
+		
+		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
+		self.grayscaleCheckbox.setGeometry(30, 195, 270, 25)
+		self.grayscaleCheckbox.setChecked(True)
 		
 	def dragEnterEvent(self, event):
 		if event.mimeData().hasUrls():
@@ -147,8 +169,10 @@ class DropBatch(QMainWindow):
 			jobDefinition = JobDefinition()
 			
 			jobDefinition.links = links
-			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
 			jobDefinition.renameChecked = self.renameCheckbox.isChecked() == True
+			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
+			jobDefinition.grayscaleChecked = self.grayscaleCheckbox.isChecked() == True
+			jobDefinition.maxImageSize = self.maxImageSizeEdit.value()
 			
 			pool = QThreadPool.globalInstance()
 			
