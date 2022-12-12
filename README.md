@@ -6,11 +6,11 @@ Drag and drop image files on app window. These files shall be processed.
 ## Features
 * process files and directories dropped on app window,
 * all image files inside a directory and it's subdirectories shall be processed,
-* images are going to be resized to max width/height (keeping aspect ratio),
+* resize images to max width/height (keeping aspect ratio),
 * images smaller than max width/height won't be resized,
-* numbers in filenames will be replaced with fixed size strings, e.g. ``file 2.jpg`` => ``file 0002.jpg``,
-* image colors will be converted to grayscale,
-* you may choose which processing options will be applied to your images,
+* replace **numbers** in filenames with **fixed size strings**, e.g. ``file 2.jpg`` => ``file 0002.jpg``,
+* convert image colors to grayscale,
+* choose which processing options will be applied to your images,
 * you don't need to wait until your drop ends processing, you may drop other files and directories on the same app window.
 
 ## Primary purpose
