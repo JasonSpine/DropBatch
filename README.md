@@ -1,8 +1,8 @@
 # Drop Batch
-![App Window](README_files/AppScreenshot.png)  
-Drag and drop image files on app window. These files shall be processed.  
+[Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.0/DropBatch.zip)  
   
-[Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.0/DropBatch.zip)
+![App Window](README_files/AppScreenshot.png)  
+Drag and drop image files on app window. These files shall be processed.
 ## Features
 * process files and directories dropped on app window,
 * all image files inside a directory and it's subdirectories shall be processed,
