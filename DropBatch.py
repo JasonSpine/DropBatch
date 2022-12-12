@@ -21,12 +21,21 @@ from PyQt5.QtGui import (
 	QImage,
 )
 
+class JobDefinition:
+	def __init__(self):
+		self.links = []
+		
+		self.renameChecked = False
+		self.resizeChecked = False
+		
+		self.grayscaleChecked = False
+		self.maxImageSize = 1800
+
 class Runnable(QRunnable):
-	def __init__(self, links, resizeChecked, renameChecked, statusLabel):
+	def __init__(self, jobDefinition, statusLabel):
 		super().__init__()
-		self.links = links
-		self.resizeChecked = resizeChecked
-		self.renameChecked = renameChecked
+		
+		self.jobDefinition = jobDefinition
 		self.statusLabel = statusLabel
 
 	def run(self):
@@ -36,7 +45,7 @@ class Runnable(QRunnable):
 	def unpack_dirs(self):
 		result = []
 		
-		for link in self.links:
+		for link in self.jobDefinition.links:
 			if os.path.isdir(link):
 				for imagePath in glob.iglob(os.path.join(link, '**/*.jpg'), recursive=True):
 					result.append(imagePath)
@@ -50,22 +59,28 @@ class Runnable(QRunnable):
 				if ext.lower() in (".jpg", ".png", ".jpeg"):
 					result.append(link)
 		
-		self.links = result
+		self.jobDefinition.links = result
 	
 	def process_files(self):
-		links_count = len(self.links)
+		links_count = len(self.jobDefinition.links)
 		
-		for i, link in enumerate(self.links):
+		for i, link in enumerate(self.jobDefinition.links):
 			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
 			
-			if self.resizeChecked:
+			if self.jobDefinition.resizeChecked:
 				self.resize_image(link)
-			if self.renameChecked:
+			if self.jobDefinition.renameChecked:
 				os.rename(link, self.get_rename_filename(link))
 	
 	def resize_image(self, imagePath):
 		img = QImage(imagePath)
-		img = img.scaled(1800, 1800, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+		
+		img = img.scaled(
+			self.jobDefinition.maxImageSize,
+			self.jobDefinition.maxImageSize,
+			Qt.KeepAspectRatio,
+			Qt.SmoothTransformation)
+			
 		img = img.convertToFormat(QImage.Format_Grayscale8)
 		#img = img.convertToFormat(QImage.Format_Grayscale16)
 		img.save(imagePath, quality = 88)
@@ -85,25 +100,22 @@ class DropBatch(QMainWindow):
 		super().__init__()
 		self.setWindowTitle("Drop Batch")
 		self.setWindowFlags(Qt.MSWindowsFixedSizeDialogHint | Qt.WindowStaysOnTopHint)
-		self.setStyleSheet("background-color: darkblue;")
+		self.setStyleSheet("background-color: darkblue; color: white;")
 		
 		self.setAcceptDrops(True)
 		#self.resize(350, 200)
 		self.setGeometry(20, 50, 350, 200)
 		
 		self.statusLabel = QLabel("Drag files and folders here!", self)
-		self.statusLabel.setStyleSheet("color: white;")
 		self.statusLabel.setGeometry(50, 20, 250, 30)
 		
-		self.resizeCheckbox = QCheckBox("Resize", self)
-		self.resizeCheckbox.setStyleSheet("color: white;")
-		self.resizeCheckbox.setGeometry(50, 100, 250, 25)
-		self.resizeCheckbox.setChecked(True)
-		
 		self.renameCheckbox = QCheckBox("Rename", self)
-		self.renameCheckbox.setStyleSheet("color: white;")
-		self.renameCheckbox.setGeometry(50, 130, 250, 25)
+		self.renameCheckbox.setGeometry(50, 100, 250, 25)
 		self.renameCheckbox.setChecked(True)
+		
+		self.resizeCheckbox = QCheckBox("Resize", self)
+		self.resizeCheckbox.setGeometry(50, 130, 250, 25)
+		self.resizeCheckbox.setChecked(True)
 		
 	def dragEnterEvent(self, event):
 		if event.mimeData().hasUrls():
@@ -132,11 +144,16 @@ class DropBatch(QMainWindow):
 					pass
 					#links.append(str(url.toString()))
 			
-			resizeChecked = self.resizeCheckbox.isChecked() == True
-			renameChecked = self.renameCheckbox.isChecked() == True
+			jobDefinition = JobDefinition()
+			
+			jobDefinition.links = links
+			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
+			jobDefinition.renameChecked = self.renameCheckbox.isChecked() == True
 			
 			pool = QThreadPool.globalInstance()
-			runnable = Runnable(links, resizeChecked, renameChecked, self.statusLabel)
+			
+			runnable = Runnable(jobDefinition, self.statusLabel)
+				
 			pool.start(runnable)
 		else:
 			event.ignore()
