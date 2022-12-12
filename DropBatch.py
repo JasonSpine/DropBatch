@@ -113,30 +113,35 @@ class DropBatch(QMainWindow):
 		
 		self.setAcceptDrops(True)
 		#self.resize(350, 300)
-		self.setGeometry(20, 50, 350, 270)
+		self.setGeometry(20, 50, 360, 270)
+		
+		warningLabel = QLabel("WARNING! Dropped files will be\nirreversibly modified!\nUse with caution!", self)
+		warningLabel.setGeometry(30, 0, 280, 80)
+		warningLabel.setStyleSheet("color: yellow; font-weight: bold; font-size: 10pt")
 		
 		self.statusLabel = QLabel("Drag files and folders here!", self)
-		self.statusLabel.setGeometry(30, 20, 250, 30)
+		self.statusLabel.setGeometry(30, 80, 250, 30)
+		self.statusLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
 		
 		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")', self)
-		self.renameCheckbox.setGeometry(30, 95, 320, 25)
+		self.renameCheckbox.setGeometry(30, 120, 320, 25)
 		self.renameCheckbox.setChecked(True)
 		
 		self.resizeCheckbox = QCheckBox("Resize", self)
-		self.resizeCheckbox.setGeometry(30, 125, 270, 25)
+		self.resizeCheckbox.setGeometry(30, 150, 270, 25)
 		self.resizeCheckbox.setChecked(True)
 		
 		maxImageSizeEditLabel = QLabel("Max width/height", self)
-		maxImageSizeEditLabel.setGeometry(40, 155, 200, 30)
+		maxImageSizeEditLabel.setGeometry(40, 180, 200, 30)
 		
 		self.maxImageSizeEdit = QSpinBox(self)
-		self.maxImageSizeEdit.setGeometry(150, 150, 100, 40)
+		self.maxImageSizeEdit.setGeometry(150, 175, 100, 40)
 		self.maxImageSizeEdit.setRange(200, 10000)
 		self.maxImageSizeEdit.setValue(1800)
 		self.maxImageSizeEdit.setSingleStep(100)
 		
 		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
-		self.grayscaleCheckbox.setGeometry(30, 195, 270, 25)
+		self.grayscaleCheckbox.setGeometry(30, 220, 270, 25)
 		self.grayscaleCheckbox.setChecked(True)
 		
 	def dragEnterEvent(self, event):
