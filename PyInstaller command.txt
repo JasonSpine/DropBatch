@@ -1,0 +1,3 @@
+pip install -U pyinstaller
+
+pyinstaller -F --noconsole DropBatch.py
