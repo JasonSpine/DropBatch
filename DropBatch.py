@@ -70,9 +70,9 @@ class Runnable(QRunnable):
 	def process_files(self):
 		links_count = len(self.jobDefinition.links)
 		
+		self.statusLabel.setText("%04d/%04d"%(0, links_count,))
+		
 		for i, link in enumerate(self.jobDefinition.links):
-			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
-			
 			_, ext = os.path.splitext(link)
 			
 			if ext.lower() in supported_image_extensions:
@@ -80,6 +80,8 @@ class Runnable(QRunnable):
 				self.rename_image(link)
 			else:
 				self.process_zip(link)
+			
+			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
 	
 	def process_zip(self, link):
 		file_path, file_name = os.path.split(link)
