@@ -17,6 +17,7 @@ Drag and drop image files on app window. These files shall be processed.
 * convert image colors to grayscale,
 * set image compression quality,
 * choose which processing options will be applied to your images,
+* CBZ files support - images inside won't be renamed, because files are supposed to have a correct order inside of the archive,
 * you don't need to wait until your drop ends processing, you may drop other files and directories on the same app window.
 
 ## Primary purpose

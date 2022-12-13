@@ -1,7 +1,7 @@
 # Requires Python 3.5+ and PyQt5 installed!
 # pip install PyQt5
 
-import sys, os, re, glob
+import sys, os, re, glob, zipfile, shutil
 
 from PyQt5.QtWidgets import (
 	QApplication,
@@ -23,7 +23,7 @@ from PyQt5.QtGui import (
 )
 
 supported_image_extensions = (".jpg", ".png", ".jpeg",)
-supported_zip_extensions = (".cbz", ".zip")
+supported_zip_extensions = (".cbz",)
 
 supported_file_extensions = []
 supported_file_extensions += supported_image_extensions
@@ -73,17 +73,45 @@ class Runnable(QRunnable):
 		for i, link in enumerate(self.jobDefinition.links):
 			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
 			
-			if self.jobDefinition.resizeChecked:
-				self.resize_image(link)
-			if self.jobDefinition.renameChecked:
-				os.rename(link, self.get_rename_filename(link))
+			_, ext = os.path.splitext(link)
+			
+			if ext.lower() in supported_image_extensions:
+				self.process_image(link)
+				self.rename_image(link)
+			else:
+				self.process_zip(link)
 	
-	def resize_image(self, imagePath):
-		img = QImage(imagePath)
+	def process_zip(self, link):
+		file_path, file_name = os.path.split(link)
+		temp_dir = "tmp_%s"%(file_name,)
+		temp_path = os.path.join(file_path, temp_dir)
+		
+		namelist = []
+		
+		with zipfile.ZipFile(link, 'r') as myzip:
+			namelist = myzip.namelist()
+			myzip.extractall(temp_path)
+		
+		os.chdir(temp_path)
+		
+		with zipfile.ZipFile(link, 'w') as myzip:
+			for imagePath in namelist:
+				self.process_image(imagePath)
+				myzip.write(imagePath)
+		
+		os.chdir(file_path)
+		
+		shutil.rmtree(temp_path)
+	
+	def process_image(self, link):
+		if not self.jobDefinition.grayscaleChecked and not self.jobDefinition.resizeChecked:
+			return
+		
+		img = QImage(link)
 		
 		anyChanges = False
 		
-		if img.width() > self.jobDefinition.maxImageSize or img.height() > self.jobDefinition.maxImageSize:
+		if self.jobDefinition.resizeChecked and (img.width() > self.jobDefinition.maxImageSize or img.height() > self.jobDefinition.maxImageSize):
 			img = img.scaled(
 				self.jobDefinition.maxImageSize,
 				self.jobDefinition.maxImageSize,
@@ -97,7 +125,11 @@ class Runnable(QRunnable):
 			anyChanges = True
 		
 		if anyChanges:
-			img.save(imagePath, quality = self.jobDefinition.imageQuality)
+			img.save(link, quality = self.jobDefinition.imageQuality)
+	
+	def rename_image(self, link):
+		if self.jobDefinition.renameChecked:
+			os.rename(link, self.get_rename_filename(link))
 	
 	def get_rename_filename(self, current_path):
 		file_path, file_name = os.path.split(current_path)
@@ -135,7 +167,7 @@ class DropBatch(QMainWindow):
 		self.renameCheckbox.setGeometry(30, 150, 320, 25)
 		self.renameCheckbox.setChecked(True)
 		
-		self.resizeCheckbox = QCheckBox("Resize", self)
+		self.resizeCheckbox = QCheckBox("Resize images", self)
 		self.resizeCheckbox.setGeometry(30, 180, 270, 25)
 		self.resizeCheckbox.setChecked(True)
 		
