@@ -31,6 +31,7 @@ class JobDefinition:
 		
 		self.grayscaleChecked = False
 		self.maxImageSize = 1800
+		self.imageQuality = 80
 
 class Runnable(QRunnable):
 	def __init__(self, jobDefinition, statusLabel):
@@ -92,7 +93,7 @@ class Runnable(QRunnable):
 			anyChanges = True
 		
 		if anyChanges:
-			img.save(imagePath, quality = 88)
+			img.save(imagePath, quality = self.jobDefinition.imageQuality)
 	
 	def get_rename_filename(self, current_path):
 		file_path, file_name = os.path.split(current_path)
@@ -113,7 +114,7 @@ class DropBatch(QMainWindow):
 		
 		self.setAcceptDrops(True)
 		#self.resize(350, 300)
-		self.setGeometry(20, 50, 360, 270)
+		self.setGeometry(20, 50, 360, 310)
 		
 		warningLabel = QLabel("WARNING! Dropped files will be\nirreversibly modified!\nUse with caution!", self)
 		warningLabel.setGeometry(30, 0, 280, 80)
@@ -143,6 +144,15 @@ class DropBatch(QMainWindow):
 		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
 		self.grayscaleCheckbox.setGeometry(30, 220, 270, 25)
 		self.grayscaleCheckbox.setChecked(True)
+		
+		imageQualityLabel = QLabel("Compression quality", self)
+		imageQualityLabel.setGeometry(30, 255, 200, 30)
+		
+		self.imageQualityEdit = QSpinBox(self)
+		self.imageQualityEdit.setGeometry(150, 250, 100, 40)
+		self.imageQualityEdit.setRange(0, 100)
+		self.imageQualityEdit.setValue(80)
+		self.imageQualityEdit.setSingleStep(3)
 		
 	def dragEnterEvent(self, event):
 		if event.mimeData().hasUrls():
@@ -178,6 +188,7 @@ class DropBatch(QMainWindow):
 			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
 			jobDefinition.grayscaleChecked = self.grayscaleCheckbox.isChecked() == True
 			jobDefinition.maxImageSize = self.maxImageSizeEdit.value()
+			jobDefinition.imageQuality = self.imageQualityEdit.value()
 			
 			pool = QThreadPool.globalInstance()
 			
