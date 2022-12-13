@@ -1,6 +1,11 @@
 # Drop Batch
 [Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.0/DropBatch.zip)  
   
+Windows Defender doesn't like this executable, because of "Unknown publisher"...  
+If that's the case, please click ``More info`` and ``Run anyway`` button.  
+You may also run this app directly from Python script if you don't trust this executable...  
+Anyway I ensure you it's not harmful...
+  
 ![App Window](README_files/AppScreenshot.png)  
 Drag and drop image files on app window. These files shall be processed.
 ## Features
