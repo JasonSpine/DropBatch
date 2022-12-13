@@ -22,6 +22,13 @@ from PyQt5.QtGui import (
 	QImage,
 )
 
+supported_image_extensions = (".jpg", ".png", ".jpeg",)
+supported_zip_extensions = (".cbz", ".zip")
+
+supported_file_extensions = []
+supported_file_extensions += supported_image_extensions
+supported_file_extensions += supported_zip_extensions
+
 class JobDefinition:
 	def __init__(self):
 		self.links = []
@@ -49,16 +56,13 @@ class Runnable(QRunnable):
 		
 		for link in self.jobDefinition.links:
 			if os.path.isdir(link):
-				for imagePath in glob.iglob(os.path.join(link, '**/*.jpg'), recursive=True):
-					result.append(imagePath)
-				for imagePath in glob.iglob(os.path.join(link, '**/*.png'), recursive=True):
-					result.append(imagePath)
-				for imagePath in glob.iglob(os.path.join(link, '**/*.jpeg'), recursive=True):
-					result.append(imagePath)
+				for ext in supported_file_extensions:
+					for imagePath in glob.iglob(os.path.join(link, '**/*%s'%(ext,)), recursive=True):
+						result.append(imagePath)
 			else:
 				_, ext = os.path.splitext(link)
 				
-				if ext.lower() in (".jpg", ".png", ".jpeg"):
+				if ext.lower() in supported_file_extensions:
 					result.append(link)
 		
 		self.jobDefinition.links = result
@@ -114,7 +118,7 @@ class DropBatch(QMainWindow):
 		
 		self.setAcceptDrops(True)
 		#self.resize(350, 300)
-		self.setGeometry(20, 50, 360, 310)
+		self.setGeometry(20, 50, 360, 340)
 		
 		warningLabel = QLabel("WARNING! Dropped files will be\nirreversibly modified!\nUse with caution!", self)
 		warningLabel.setGeometry(30, 0, 280, 80)
@@ -124,32 +128,35 @@ class DropBatch(QMainWindow):
 		self.statusLabel.setGeometry(30, 80, 250, 30)
 		self.statusLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
 		
+		extensionsLabel = QLabel("    ".join("*%s"%(ext,) for ext in supported_file_extensions), self)
+		extensionsLabel.setGeometry(30, 105, 250, 30)
+		
 		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")', self)
-		self.renameCheckbox.setGeometry(30, 120, 320, 25)
+		self.renameCheckbox.setGeometry(30, 150, 320, 25)
 		self.renameCheckbox.setChecked(True)
 		
 		self.resizeCheckbox = QCheckBox("Resize", self)
-		self.resizeCheckbox.setGeometry(30, 150, 270, 25)
+		self.resizeCheckbox.setGeometry(30, 180, 270, 25)
 		self.resizeCheckbox.setChecked(True)
 		
 		maxImageSizeEditLabel = QLabel("Max width/height", self)
-		maxImageSizeEditLabel.setGeometry(40, 180, 200, 30)
+		maxImageSizeEditLabel.setGeometry(40, 210, 200, 30)
 		
 		self.maxImageSizeEdit = QSpinBox(self)
-		self.maxImageSizeEdit.setGeometry(150, 175, 100, 40)
+		self.maxImageSizeEdit.setGeometry(150, 205, 100, 40)
 		self.maxImageSizeEdit.setRange(200, 10000)
 		self.maxImageSizeEdit.setValue(1800)
 		self.maxImageSizeEdit.setSingleStep(100)
 		
 		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
-		self.grayscaleCheckbox.setGeometry(30, 220, 270, 25)
+		self.grayscaleCheckbox.setGeometry(30, 250, 270, 25)
 		self.grayscaleCheckbox.setChecked(True)
 		
 		imageQualityLabel = QLabel("Compression quality", self)
-		imageQualityLabel.setGeometry(30, 255, 200, 30)
+		imageQualityLabel.setGeometry(30, 285, 200, 30)
 		
 		self.imageQualityEdit = QSpinBox(self)
-		self.imageQualityEdit.setGeometry(150, 250, 100, 40)
+		self.imageQualityEdit.setGeometry(150, 280, 100, 40)
 		self.imageQualityEdit.setRange(0, 100)
 		self.imageQualityEdit.setValue(80)
 		self.imageQualityEdit.setSingleStep(3)
