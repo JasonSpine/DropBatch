@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (
 	QLabel,
 	QCheckBox,
 	QSpinBox,
+	QMessageBox,
 )
 
 from PyQt5.QtCore import (
@@ -16,6 +17,7 @@ from PyQt5.QtCore import (
 	QUrl,
 	QRunnable,
 	QThreadPool,
+	QMutex,
 )
 
 from PyQt5.QtGui import (
@@ -29,6 +31,8 @@ supported_file_extensions = []
 supported_file_extensions += supported_image_extensions
 supported_file_extensions += supported_zip_extensions
 
+mutex = QMutex()
+
 class JobDefinition:
 	def __init__(self):
 		self.links = []
@@ -41,15 +45,27 @@ class JobDefinition:
 		self.imageQuality = 80
 
 class Runnable(QRunnable):
-	def __init__(self, jobDefinition, statusLabel):
+	def __init__(self, jobDefinition, statusLabel, tasksLabel):
 		super().__init__()
 		
 		self.jobDefinition = jobDefinition
 		self.statusLabel = statusLabel
+		self.tasksLabel = tasksLabel
 
 	def run(self):
-		self.unpack_dirs()
-		self.process_files()
+		self.tasksLabel.setText(str(int(self.tasksLabel.text()) + 1))
+		
+		mutex.lock()
+		
+		try:
+			self.unpack_dirs()
+			self.process_files()
+		except Exception as err:
+			self.show_error_message(type(err).__name__, str(err))
+		
+		mutex.unlock()
+		
+		self.tasksLabel.setText(str(int(self.tasksLabel.text()) - 1))
 	
 	def unpack_dirs(self):
 		result = []
@@ -143,6 +159,14 @@ class Runnable(QRunnable):
 	def process_filename_number(self, number_re_match):
 		return "%04d"%(int(number_re_match.group(0)),)
 		
+	def show_error_message(self, error_type, error_description):
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Critical)
+		msg.setText(error_description)
+		#msg.setInformativeText(error_description)
+		msg.setWindowTitle(error_type)
+		msg.exec_()
+		
 class DropBatch(QMainWindow):
 	def __init__(self):
 		super().__init__()
@@ -161,6 +185,14 @@ class DropBatch(QMainWindow):
 		self.statusLabel = QLabel("Drag files and folders here!", self)
 		self.statusLabel.setGeometry(30, 80, 250, 30)
 		self.statusLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		
+		tasksLabel = QLabel("Tasks: ", self)
+		tasksLabel.setGeometry(250, 80, 150, 30)
+		tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		
+		self.tasksLabel = QLabel("0", self)
+		self.tasksLabel.setGeometry(304, 80, 150, 30)
+		self.tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
 		
 		extensionsLabel = QLabel("    ".join("*%s"%(ext,) for ext in supported_file_extensions), self)
 		extensionsLabel.setGeometry(30, 105, 250, 30)
@@ -233,7 +265,7 @@ class DropBatch(QMainWindow):
 			
 			pool = QThreadPool.globalInstance()
 			
-			runnable = Runnable(jobDefinition, self.statusLabel)
+			runnable = Runnable(jobDefinition, self.statusLabel, self.tasksLabel)
 				
 			pool.start(runnable)
 		else:
