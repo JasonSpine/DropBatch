@@ -6,7 +6,7 @@ If that's the case, please click ``More info`` and ``Run anyway`` button.
 You may also run this app directly from Python script if you don't trust this executable...  
 Anyway, rest assured, this executable and app code is not harmful for your PC...  
   
-![App Window](README_files/AppScreenshot.png)  
+![App Screenshot](README_files/AppGif.gif)  
 Drag and drop image files on app window. These files shall be processed.
 ## Features
 * process files and directories dropped on app window,
