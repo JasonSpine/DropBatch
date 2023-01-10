@@ -216,7 +216,7 @@ class DropBatch(QMainWindow):
 		
 		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
 		self.grayscaleCheckbox.setGeometry(30, 250, 270, 25)
-		self.grayscaleCheckbox.setChecked(True)
+		self.grayscaleCheckbox.setChecked(False)
 		
 		imageQualityLabel = QLabel("Compression quality", self)
 		imageQualityLabel.setGeometry(30, 285, 200, 30)
@@ -249,7 +249,7 @@ class DropBatch(QMainWindow):
 			
 			for url in event.mimeData().urls():
 				if url.isLocalFile():
-					links.append(str(url.toLocalFile()))
+					links.append(url.toLocalFile())
 				else:
 					pass
 					#links.append(str(url.toString()))
