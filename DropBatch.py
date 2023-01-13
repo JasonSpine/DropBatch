@@ -6,6 +6,9 @@ import sys, os, re, glob, zipfile, shutil
 from PyQt5.QtWidgets import (
 	QApplication,
 	QMainWindow,
+	QWidget,
+	QVBoxLayout,
+	QHBoxLayout,
 	QLabel,
 	QCheckBox,
 	QSpinBox,
@@ -38,9 +41,9 @@ class JobDefinition:
 		self.links = []
 		
 		self.renameChecked = False
+		self.grayscaleChecked = False
 		self.resizeChecked = False
 		
-		self.grayscaleChecked = False
 		self.maxImageSize = 1800
 		self.imageQuality = 80
 
@@ -175,57 +178,80 @@ class DropBatch(QMainWindow):
 		self.setStyleSheet("background-color: darkblue; color: white;")
 		
 		self.setAcceptDrops(True)
-		#self.resize(350, 300)
-		self.setGeometry(20, 50, 360, 340)
 		
-		warningLabel = QLabel("WARNING! Dropped files will be\nirreversibly modified!\nUse with caution!", self)
-		warningLabel.setGeometry(30, 0, 280, 80)
+		centralWidget = QWidget(self)
+		self.setCentralWidget(centralWidget)
+		windowLayout = QVBoxLayout()
+		centralWidget.setLayout(windowLayout)
+		
+		warningLabel = QLabel("WARNING!\nDropped files will be irreversibly\nmodified! Use with caution!")
 		warningLabel.setStyleSheet("color: yellow; font-weight: bold; font-size: 10pt")
+		warningLabel.setAlignment(Qt.AlignCenter)
+		windowLayout.addWidget(warningLabel, 2)
 		
-		self.statusLabel = QLabel("Drag files and folders here!", self)
-		self.statusLabel.setGeometry(30, 80, 250, 30)
+		extensionsLabel = QLabel("    ".join("*%s"%(ext,) for ext in supported_file_extensions))
+		extensionsLabel.setAlignment(Qt.AlignCenter)
+		windowLayout.addWidget(extensionsLabel, 1)
+		
+		statusLineWidget = QWidget()
+		statusLineLayout = QHBoxLayout()
+		statusLineWidget.setLayout(statusLineLayout)
+		windowLayout.addWidget(statusLineWidget, 1)
+		
+		self.statusLabel = QLabel("Drag files and folders here!")
 		self.statusLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		statusLineLayout.addWidget(self.statusLabel)
 		
-		tasksLabel = QLabel("Tasks: ", self)
-		tasksLabel.setGeometry(250, 80, 150, 30)
+		tasksLabel = QLabel("   Tasks: ")
 		tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		statusLineLayout.addWidget(tasksLabel)
 		
-		self.tasksLabel = QLabel("0", self)
-		self.tasksLabel.setGeometry(304, 80, 150, 30)
+		self.tasksLabel = QLabel("0")
 		self.tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		statusLineLayout.addWidget(self.tasksLabel)
 		
-		extensionsLabel = QLabel("    ".join("*%s"%(ext,) for ext in supported_file_extensions), self)
-		extensionsLabel.setGeometry(30, 105, 250, 30)
-		
-		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")', self)
-		self.renameCheckbox.setGeometry(30, 150, 320, 25)
+		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")')
 		self.renameCheckbox.setChecked(True)
+		windowLayout.addWidget(self.renameCheckbox, 1)
 		
-		self.resizeCheckbox = QCheckBox("Resize images", self)
-		self.resizeCheckbox.setGeometry(30, 180, 270, 25)
+		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale")
+		self.grayscaleCheckbox.setChecked(False)
+		windowLayout.addWidget(self.grayscaleCheckbox, 1)
+		
+		self.resizeCheckbox = QCheckBox("Resize images")
 		self.resizeCheckbox.setChecked(True)
+		windowLayout.addWidget(self.resizeCheckbox, 1)
 		
-		maxImageSizeEditLabel = QLabel("Max width/height", self)
-		maxImageSizeEditLabel.setGeometry(40, 210, 200, 30)
+		maxImageSizeLineWidget = QWidget()
+		maxImageSizeLineLayout = QHBoxLayout()
+		maxImageSizeLineWidget.setLayout(maxImageSizeLineLayout)
+		windowLayout.addWidget(maxImageSizeLineWidget, 1)
 		
-		self.maxImageSizeEdit = QSpinBox(self)
-		self.maxImageSizeEdit.setGeometry(150, 205, 100, 40)
+		maxImageSizeLineLayout.addWidget(QLabel("Max width/height"))
+		
+		self.maxImageSizeEdit = QSpinBox()
 		self.maxImageSizeEdit.setRange(200, 10000)
 		self.maxImageSizeEdit.setValue(1800)
 		self.maxImageSizeEdit.setSingleStep(100)
+		maxImageSizeLineLayout.addWidget(self.maxImageSizeEdit)
 		
-		self.grayscaleCheckbox = QCheckBox("Convert colors to grayscale", self)
-		self.grayscaleCheckbox.setGeometry(30, 250, 270, 25)
-		self.grayscaleCheckbox.setChecked(False)
+		imageQualityLineWidget = QWidget()
+		imageQualityLineLayout = QHBoxLayout()
+		imageQualityLineWidget.setLayout(imageQualityLineLayout)
+		windowLayout.addWidget(imageQualityLineWidget, 1)
 		
-		imageQualityLabel = QLabel("Compression quality", self)
-		imageQualityLabel.setGeometry(30, 285, 200, 30)
+		imageQualityLineLayout.addWidget(QLabel("Compression quality"))
 		
-		self.imageQualityEdit = QSpinBox(self)
-		self.imageQualityEdit.setGeometry(150, 280, 100, 40)
+		self.imageQualityEdit = QSpinBox()
 		self.imageQualityEdit.setRange(0, 100)
 		self.imageQualityEdit.setValue(80)
 		self.imageQualityEdit.setSingleStep(3)
+		
+		imageQualityLineLayout.addWidget(self.imageQualityEdit)
+		
+		
+		
+		self.setGeometry(20, 50, 4, 4)
 		
 	def dragEnterEvent(self, event):
 		if event.mimeData().hasUrls():
@@ -258,8 +284,8 @@ class DropBatch(QMainWindow):
 			
 			jobDefinition.links = links
 			jobDefinition.renameChecked = self.renameCheckbox.isChecked() == True
-			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
 			jobDefinition.grayscaleChecked = self.grayscaleCheckbox.isChecked() == True
+			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
 			jobDefinition.maxImageSize = self.maxImageSizeEdit.value()
 			jobDefinition.imageQuality = self.imageQualityEdit.value()
 			
