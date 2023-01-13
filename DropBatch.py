@@ -1,7 +1,7 @@
 # Requires Python 3.5+ and PyQt5 installed!
 # pip install PyQt5
 
-import sys, os, re, glob, zipfile, shutil
+import sys, os, re, glob, zipfile, shutil, datetime
 
 from PyQt5.QtWidgets import (
 	QApplication,
@@ -46,6 +46,8 @@ class JobDefinition:
 		
 		self.maxImageSize = 1800
 		self.imageQuality = 80
+		
+		self.createCbzChecked = False
 
 class Runnable(QRunnable):
 	def __init__(self, jobDefinition, statusLabel, tasksLabel):
@@ -54,6 +56,8 @@ class Runnable(QRunnable):
 		self.jobDefinition = jobDefinition
 		self.statusLabel = statusLabel
 		self.tasksLabel = tasksLabel
+		
+		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
 
 	def run(self):
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) + 1))
@@ -91,16 +95,20 @@ class Runnable(QRunnable):
 		
 		self.statusLabel.setText("%04d/%04d"%(0, links_count,))
 		
+		processed_files = []
+		
 		for i, link in enumerate(self.jobDefinition.links):
 			_, ext = os.path.splitext(link)
 			
 			if ext.lower() in supported_image_extensions:
 				self.process_image(link)
-				self.rename_image(link)
+				processed_files.append(self.rename_image(link))
 			else:
 				self.process_zip(link)
 			
 			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
+		
+		self.pack_processed_files(processed_files)
 	
 	def process_zip(self, link):
 		file_path, file_name = os.path.split(link)
@@ -150,7 +158,11 @@ class Runnable(QRunnable):
 	
 	def rename_image(self, link):
 		if self.jobDefinition.renameChecked:
-			os.rename(link, self.get_rename_filename(link))
+			renamed_link = self.get_rename_filename(link)
+			os.rename(link, renamed_link)
+			return renamed_link
+			
+		return link
 	
 	def get_rename_filename(self, current_path):
 		file_path, file_name = os.path.split(current_path)
@@ -161,7 +173,26 @@ class Runnable(QRunnable):
 	
 	def process_filename_number(self, number_re_match):
 		return "%04d"%(int(number_re_match.group(0)),)
+	
+	def pack_processed_files(self, processed_files):
+		cbz_filename = self.gen_new_cbz_filename()
 		
+		os.chdir(self.parent_directory)
+		
+		namelist = []
+		print(self.parent_directory)
+		for imagePath in self.jobDefinition.links:
+			print(imagePath)
+		'''
+		with zipfile.ZipFile(cbz_filename, 'w') as myzip:
+			for imagePath in namelist:
+				myzip.write(imagePath)
+		'''
+	
+	def gen_new_cbz_filename(self):
+		ct = datetime.datetime.now() # current time
+		return "DropBatch_%s.cbz"%(ct.strftime("%Y%m%d_%H%M%S"),)
+	
 	def show_error_message(self, error_type, error_description):
 		msg = QMessageBox()
 		msg.setIcon(QMessageBox.Critical)
@@ -249,7 +280,9 @@ class DropBatch(QMainWindow):
 		
 		imageQualityLineLayout.addWidget(self.imageQualityEdit)
 		
-		
+		self.createCbzCheckbox = QCheckBox("Pack converted images and directories into CBZ")
+		self.createCbzCheckbox.setChecked(False)
+		windowLayout.addWidget(self.createCbzCheckbox, 1)
 		
 		self.setGeometry(20, 50, 4, 4)
 		
@@ -288,6 +321,7 @@ class DropBatch(QMainWindow):
 			jobDefinition.resizeChecked = self.resizeCheckbox.isChecked() == True
 			jobDefinition.maxImageSize = self.maxImageSizeEdit.value()
 			jobDefinition.imageQuality = self.imageQualityEdit.value()
+			jobDefinition.createCbzChecked = self.createCbzCheckbox.isChecked() == True
 			
 			pool = QThreadPool.globalInstance()
 			

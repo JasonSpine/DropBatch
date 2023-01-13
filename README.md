@@ -18,7 +18,9 @@ Drag and drop image files on app window. These files shall be processed.
 * set image compression quality,
 * choose which processing options will be applied to your images,
 * CBZ files support - images inside won't be renamed, because files are supposed to have a correct order inside of the archive,
-* you don't need to wait until your drop ends processing, you may drop other files and directories on the same app window.
+* you don't need to wait until your drop ends processing, you may drop other files and directories on the same app window and their processing will be enqueued,
+* you may choose to pack converted files to a CBZ file,
+* converted files will be removed after packing to CBZ.
 
 ## Primary purpose
 I wrote this app, because I wanted to process image files for my e-book reader.  
