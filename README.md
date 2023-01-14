@@ -1,5 +1,5 @@
 # Drop Batch
-[Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.0/DropBatch.zip)  
+[Download Windows executable (PyInstaller)](https://github.com/JasonSpine/DropBatch/releases/download/v1.1/DropBatch1.1.zip)  
   
 Windows Defender doesn't like this executable, because of "Unknown publisher"...  
 If that's the case, please click ``More info`` and ``Run anyway`` button.  
