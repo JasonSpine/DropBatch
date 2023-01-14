@@ -217,7 +217,7 @@ class DropBatch(QMainWindow):
 		super().__init__()
 		self.setWindowTitle("Drop Batch")
 		self.setWindowFlags(Qt.MSWindowsFixedSizeDialogHint | Qt.WindowStaysOnTopHint)
-		self.setStyleSheet("background-color: darkblue; color: white;")
+		#self.setStyleSheet("background-color: #fffeea")
 		
 		self.setAcceptDrops(True)
 		
@@ -227,7 +227,7 @@ class DropBatch(QMainWindow):
 		centralWidget.setLayout(windowLayout)
 		
 		warningLabel = QLabel("WARNING!\nDropped files will be irreversibly\nmodified! Use with caution!")
-		warningLabel.setStyleSheet("color: yellow; font-weight: bold; font-size: 10pt")
+		warningLabel.setStyleSheet("color: red; font-weight: bold")
 		warningLabel.setAlignment(Qt.AlignCenter)
 		windowLayout.addWidget(warningLabel, 2)
 		
@@ -241,15 +241,15 @@ class DropBatch(QMainWindow):
 		windowLayout.addWidget(statusLineWidget, 1)
 		
 		self.statusLabel = QLabel("Drag files and folders here!")
-		self.statusLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		self.statusLabel.setStyleSheet("font-weight: bold")
 		statusLineLayout.addWidget(self.statusLabel)
 		
 		tasksLabel = QLabel("   Tasks: ")
-		tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		tasksLabel.setStyleSheet("font-weight: bold")
 		statusLineLayout.addWidget(tasksLabel)
 		
 		self.tasksLabel = QLabel("0")
-		self.tasksLabel.setStyleSheet("font-weight: bold; font-size: 9pt")
+		self.tasksLabel.setStyleSheet("font-weight: bold")
 		statusLineLayout.addWidget(self.tasksLabel)
 		
 		self.renameCheckbox = QCheckBox('Rename (e.g."v1ch3.jpg" => "v0001ch0003.jpg")')
