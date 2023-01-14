@@ -56,10 +56,11 @@ class Runnable(QRunnable):
 		self.jobDefinition = jobDefinition
 		self.statusLabel = statusLabel
 		self.tasksLabel = tasksLabel
-		
-		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
 
 	def run(self):
+		if self.validation_failed():
+			return
+		
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) + 1))
 		
 		mutex.lock()
@@ -74,7 +75,15 @@ class Runnable(QRunnable):
 		
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) - 1))
 	
+	def validation_failed(self):
+		if len(self.jobDefinition.links) < 0:
+			return True
+		
+		return False
+	
 	def unpack_dirs(self):
+		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
+		
 		result = []
 		
 		for link in self.jobDefinition.links:
@@ -175,19 +184,21 @@ class Runnable(QRunnable):
 		return "%04d"%(int(number_re_match.group(0)),)
 	
 	def pack_processed_files(self, processed_files):
+		if not self.jobDefinition.createCbzChecked:
+			return
+		
 		cbz_filename = self.gen_new_cbz_filename()
 		
 		os.chdir(self.parent_directory)
 		
-		namelist = []
-		print(self.parent_directory)
-		for imagePath in self.jobDefinition.links:
-			print(imagePath)
-		'''
 		with zipfile.ZipFile(cbz_filename, 'w') as myzip:
-			for imagePath in namelist:
-				myzip.write(imagePath)
-		'''
+			for imagePath in processed_files:
+				myzip.write(os.path.relpath(imagePath))
+		
+		
+		
+		for imagePath in processed_files:
+			os.remove(imagePath)
 	
 	def gen_new_cbz_filename(self):
 		ct = datetime.datetime.now() # current time
