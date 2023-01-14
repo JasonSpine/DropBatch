@@ -291,7 +291,7 @@ class DropBatch(QMainWindow):
 		
 		imageQualityLineLayout.addWidget(self.imageQualityEdit)
 		
-		self.createCbzCheckbox = QCheckBox("Pack converted images and directories into CBZ")
+		self.createCbzCheckbox = QCheckBox("Create *.cbz out of dropped images and directories")
 		self.createCbzCheckbox.setChecked(False)
 		windowLayout.addWidget(self.createCbzCheckbox, 1)
 		
