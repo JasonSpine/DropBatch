@@ -180,28 +180,7 @@ class Runnable(QRunnable):
 		target_folder = "%s_%s"%(folder_link, self.gen_new_container_name(),)
 		self.process_all_images(target_folder)
 		
-	
-	def process_files(self):
-		links_count = len(self.jobDefinition.links)
-		
-		self.statusLabel.setText("%04d/%04d"%(0, links_count,))
-		
-		processed_files = []
-		
-		for i, link in enumerate(self.jobDefinition.links):
-			_, ext = os.path.splitext(link)
-			
-			if ext.lower() in supported_image_extensions:
-				self.process_image(link)
-				processed_files.append(self.rename_image(link))
-			else:
-				self.process_zip(link)
-			
-			self.statusLabel.setText("%04d/%04d"%(i + 1, links_count,))
-		
-		self.pack_processed_files(processed_files)
-	
-	
+		self.save_folder_content_as_cbz(target_folder, target_folder + ".cbz")
 	
 	def process_cbz(self, link):
 		file_path, file_name = os.path.split(link)
@@ -235,22 +214,18 @@ class Runnable(QRunnable):
 	def process_filename_number(self, number_re_match):
 		return "%04d"%(int(number_re_match.group(0)),)
 	
-	def pack_processed_files(self, processed_files):
+	def save_folder_content_as_cbz(self, folder, cbz_path):
 		if not self.jobDefinition.createCbzChecked:
 			return
 		
-		cbz_filename = self.gen_new_cbz_filename()
+		os.chdir(folder)
 		
-		os.chdir(self.parent_directory)
-		
-		with zipfile.ZipFile(cbz_filename, 'w') as myzip:
-			for imagePath in processed_files:
+		with zipfile.ZipFile(cbz_path, 'w') as myzip:
+			for imagePath in glob.iglob("*", recursive = False):
 				myzip.write(os.path.relpath(imagePath))
 		
-		
-		
-		for imagePath in processed_files:
-			os.remove(imagePath)
+		os.chdir(self.parent_directory) # to make folder removal possible	
+		shutil.rmtree(folder)
 	
 	def gen_new_container_name(self):
 		ct = datetime.datetime.now() # current time
