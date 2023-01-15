@@ -105,7 +105,7 @@ class Runnable(QRunnable):
 		result = []
 		
 		for ext in supported_image_extensions:
-			for imagePath in glob.iglob(os.path.join(dropped_folder, '*%s'%(ext,)), recursive = False):
+			for imagePath in glob.iglob(os.path.join(dropped_folder, '**/*%s'%(ext,)), recursive = True):
 				result.append(imagePath)
 		
 		return result
@@ -217,8 +217,9 @@ class Runnable(QRunnable):
 		os.chdir(folder)
 		
 		with zipfile.ZipFile(cbz_path, 'w') as myzip:
-			for imagePath in glob.iglob("*", recursive = False):
-				myzip.write(os.path.relpath(imagePath))
+			for ext in supported_image_extensions:
+				for imagePath in glob.iglob('**/*%s'%(ext,), recursive = True):
+					myzip.write(os.path.relpath(imagePath))
 		
 		os.chdir(self.parent_directory) # to make folder removal possible	
 		shutil.rmtree(folder)
