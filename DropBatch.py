@@ -65,6 +65,8 @@ class Runnable(QRunnable):
 		
 		mutex.lock()
 		
+		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
+		
 		try:
 			self.unpack_dirs()
 			self.process_files()
@@ -76,13 +78,13 @@ class Runnable(QRunnable):
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) - 1))
 	
 	def validation_failed(self):
-		if len(self.jobDefinition.links) < 0:
+		if len(self.jobDefinition.links) < 1:
 			return True
 		
 		return False
 	
 	def unpack_dirs(self):
-		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
+		
 		
 		result = []
 		
@@ -226,8 +228,8 @@ class DropBatch(QMainWindow):
 		windowLayout = QVBoxLayout()
 		centralWidget.setLayout(windowLayout)
 		
-		warningLabel = QLabel("WARNING!\nDropped files will be irreversibly\nmodified! Use with caution!")
-		warningLabel.setStyleSheet("color: red; font-weight: bold")
+		warningLabel = QLabel("Converted files will be saved\nnext to dropped files")
+		warningLabel.setStyleSheet("color: darkblue; font-weight: bold")
 		warningLabel.setAlignment(Qt.AlignCenter)
 		windowLayout.addWidget(warningLabel, 2)
 		
@@ -269,7 +271,9 @@ class DropBatch(QMainWindow):
 		maxImageSizeLineWidget.setLayout(maxImageSizeLineLayout)
 		windowLayout.addWidget(maxImageSizeLineWidget, 1)
 		
-		maxImageSizeLineLayout.addWidget(QLabel("Max width/height"))
+		maxImageSizeLabel = QLabel("Max width/height")
+		maxImageSizeLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+		maxImageSizeLineLayout.addWidget(maxImageSizeLabel)
 		
 		self.maxImageSizeEdit = QSpinBox()
 		self.maxImageSizeEdit.setRange(200, 10000)
@@ -282,7 +286,9 @@ class DropBatch(QMainWindow):
 		imageQualityLineWidget.setLayout(imageQualityLineLayout)
 		windowLayout.addWidget(imageQualityLineWidget, 1)
 		
-		imageQualityLineLayout.addWidget(QLabel("Compression quality"))
+		imageQualityLabel = QLabel("Compression quality")
+		imageQualityLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+		imageQualityLineLayout.addWidget(imageQualityLabel)
 		
 		self.imageQualityEdit = QSpinBox()
 		self.imageQualityEdit.setRange(0, 100)
@@ -291,7 +297,7 @@ class DropBatch(QMainWindow):
 		
 		imageQualityLineLayout.addWidget(self.imageQualityEdit)
 		
-		self.createCbzCheckbox = QCheckBox("Create *.cbz out of dropped images and directories")
+		self.createCbzCheckbox = QCheckBox("Save dropped directories as *.cbz")
 		self.createCbzCheckbox.setChecked(False)
 		windowLayout.addWidget(self.createCbzCheckbox, 1)
 		
