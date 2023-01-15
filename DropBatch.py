@@ -121,8 +121,7 @@ class Runnable(QRunnable):
 		if files_count < 1:
 			return
 		
-		if not os.path.exists(target_folder):
-			os.mkdir(target_folder)
+		os.makedirs(target_folder, exist_ok = True)
 		
 		self.statusLabel.setText("%04d/%04d"%(0, files_count,))
 		
@@ -141,7 +140,12 @@ class Runnable(QRunnable):
 	
 	def process_image(self, link, target_dir):
 		file_path, file_name = os.path.split(link)
-		target_link = os.path.join(target_dir, file_name)
+		
+		subfolders = os.path.relpath(file_path, self.parent_directory)
+		
+		target_link = os.path.join(target_dir, subfolders)
+		os.makedirs(target_link, exist_ok = True)
+		target_link = os.path.join(target_link, file_name)
 		
 		if self.jobDefinition.renameChecked:
 			target_link = self.get_rename_filename(target_link)
