@@ -86,13 +86,13 @@ class Runnable(QRunnable):
 	def group_links(self):
 		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
 		
-		self.dropped_dirs = []
 		self.dropped_images = []
+		self.dropped_folders = []
 		self.dropped_cbz = []
 		
 		for link in self.jobDefinition.links:
 			if os.path.isdir(link):
-				self.dropped_dirs.append(link)
+				self.dropped_folders.append(link)
 			else:
 				ext = os.path.splitext(link)[1].lower()
 				
@@ -101,38 +101,37 @@ class Runnable(QRunnable):
 				elif ext in supported_zip_extensions:
 					self.dropped_cbz.append(link)
 	
-	def dir_images(self, dropped_dir):
+	def get_folder_images(self, dropped_folder):
 		result = []
 		
 		for ext in supported_image_extensions:
-			for imagePath in glob.iglob(os.path.join(dropped_dir, '**/*%s'%(ext,)), recursive=True):
+			for imagePath in glob.iglob(os.path.join(dropped_folder, '*%s'%(ext,)), recursive = False):
 				result.append(imagePath)
 		
 		return result
 		
 	def process_drop(self):
-		self.process_all_images()
+		self.process_all_images(os.path.join(self.parent_directory, self.gen_new_container_name()))
 		self.process_all_folders()
 		self.process_all_cbz()
 	
-	def process_all_images(self):
+	def process_all_images(self, target_folder):
 		files_count = len(self.dropped_images)
 		
 		if files_count < 1:
 			return
 		
-		images_target_dir = os.path.join(self.parent_directory, self.gen_new_container_name())
-		os.mkdir(images_target_dir)
+		os.mkdir(target_folder)
 		
 		self.statusLabel.setText("%04d/%04d"%(0, files_count,))
 		
 		for i, image in enumerate(self.dropped_images):
-			self.process_image(image, images_target_dir)
+			self.process_image(image, target_folder)
 			
 			self.statusLabel.setText("%04d/%04d"%(i + 1, files_count,))
 	
 	def process_all_folders(self):
-		for folder in self.dropped_dirs:
+		for folder in self.dropped_folders:
 			self.process_folder(folder)
 		
 	def process_all_cbz(self):
@@ -169,9 +168,18 @@ class Runnable(QRunnable):
 		
 		if anyChanges:
 			img.save(target_link, quality = self.jobDefinition.imageQuality)
+		else:
+			shutil.copy(link, target_link)
 	
 	def process_folder(self, folder_link):
-		pass
+		self.dropped_images = self.get_folder_images(folder_link)
+		
+		if len(self.dropped_images) < 1:
+			return
+		
+		target_folder = "%s_%s"%(folder_link, self.gen_new_container_name(),)
+		self.process_all_images(target_folder)
+		
 	
 	def process_files(self):
 		links_count = len(self.jobDefinition.links)
