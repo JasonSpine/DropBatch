@@ -61,20 +61,20 @@ class Runnable(QRunnable):
 		if self.validation_failed():
 			return
 		
+		# increment tasks counter
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) + 1))
 		
 		mutex.lock()
 		
-		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
-		
 		try:
-			self.unpack_dirs()
-			self.process_files()
+			self.group_links()
+			self.process_drop()
 		except Exception as err:
 			self.show_error_message(type(err).__name__, str(err))
 		
 		mutex.unlock()
 		
+		# decrement tasks counter
 		self.tasksLabel.setText(str(int(self.tasksLabel.text()) - 1))
 	
 	def validation_failed(self):
@@ -83,23 +83,95 @@ class Runnable(QRunnable):
 		
 		return False
 	
-	def unpack_dirs(self):
+	def group_links(self):
+		self.parent_directory = os.path.dirname(self.jobDefinition.links[0])
 		
-		
-		result = []
+		self.dropped_dirs = []
+		self.dropped_images = []
+		self.dropped_cbz = []
 		
 		for link in self.jobDefinition.links:
 			if os.path.isdir(link):
-				for ext in supported_file_extensions:
-					for imagePath in glob.iglob(os.path.join(link, '**/*%s'%(ext,)), recursive=True):
-						result.append(imagePath)
+				self.dropped_dirs.append(link)
 			else:
-				_, ext = os.path.splitext(link)
+				ext = os.path.splitext(link)[1].lower()
 				
-				if ext.lower() in supported_file_extensions:
-					result.append(link)
+				if ext in supported_image_extensions:
+					self.dropped_images.append(link)
+				elif ext in supported_zip_extensions:
+					self.dropped_cbz.append(link)
+	
+	def dir_images(self, dropped_dir):
+		result = []
 		
-		self.jobDefinition.links = result
+		for ext in supported_image_extensions:
+			for imagePath in glob.iglob(os.path.join(dropped_dir, '**/*%s'%(ext,)), recursive=True):
+				result.append(imagePath)
+		
+		return result
+		
+	def process_drop(self):
+		self.process_all_images()
+		self.process_all_folders()
+		self.process_all_cbz()
+	
+	def process_all_images(self):
+		files_count = len(self.dropped_images)
+		
+		if files_count < 1:
+			return
+		
+		images_target_dir = os.path.join(self.parent_directory, self.gen_new_container_name())
+		os.mkdir(images_target_dir)
+		
+		self.statusLabel.setText("%04d/%04d"%(0, files_count,))
+		
+		for i, image in enumerate(self.dropped_images):
+			self.process_image(image, images_target_dir)
+			
+			self.statusLabel.setText("%04d/%04d"%(i + 1, files_count,))
+	
+	def process_all_folders(self):
+		for folder in self.dropped_dirs:
+			self.process_folder(folder)
+		
+	def process_all_cbz(self):
+		for cbz in self.dropped_cbz:
+			self.process_cbz(cbz)
+	
+	def process_image(self, link, target_dir):
+		file_path, file_name = os.path.split(link)
+		target_link = os.path.join(target_dir, file_name)
+		
+		if self.jobDefinition.renameChecked:
+			target_link = self.get_rename_filename(target_link)
+		
+		if not self.jobDefinition.grayscaleChecked and not self.jobDefinition.resizeChecked:
+			shutil.copy(link, target_link)
+			return
+		
+		img = QImage(link)
+		
+		anyChanges = False
+		
+		if self.jobDefinition.resizeChecked and (img.width() > self.jobDefinition.maxImageSize or img.height() > self.jobDefinition.maxImageSize):
+			img = img.scaled(
+				self.jobDefinition.maxImageSize,
+				self.jobDefinition.maxImageSize,
+				Qt.KeepAspectRatio,
+				Qt.SmoothTransformation)
+			anyChanges = True
+		
+		if self.jobDefinition.grayscaleChecked and not img.isGrayscale():
+			img = img.convertToFormat(QImage.Format_Grayscale8)
+			#img = img.convertToFormat(QImage.Format_Grayscale16)
+			anyChanges = True
+		
+		if anyChanges:
+			img.save(target_link, quality = self.jobDefinition.imageQuality)
+	
+	def process_folder(self, folder_link):
+		pass
 	
 	def process_files(self):
 		links_count = len(self.jobDefinition.links)
@@ -121,7 +193,9 @@ class Runnable(QRunnable):
 		
 		self.pack_processed_files(processed_files)
 	
-	def process_zip(self, link):
+	
+	
+	def process_cbz(self, link):
 		file_path, file_name = os.path.split(link)
 		temp_dir = "tmp_%s"%(file_name,)
 		temp_path = os.path.join(file_path, temp_dir)
@@ -142,38 +216,6 @@ class Runnable(QRunnable):
 		os.chdir(file_path)
 		
 		shutil.rmtree(temp_path)
-	
-	def process_image(self, link):
-		if not self.jobDefinition.grayscaleChecked and not self.jobDefinition.resizeChecked:
-			return
-		
-		img = QImage(link)
-		
-		anyChanges = False
-		
-		if self.jobDefinition.resizeChecked and (img.width() > self.jobDefinition.maxImageSize or img.height() > self.jobDefinition.maxImageSize):
-			img = img.scaled(
-				self.jobDefinition.maxImageSize,
-				self.jobDefinition.maxImageSize,
-				Qt.KeepAspectRatio,
-				Qt.SmoothTransformation)
-			anyChanges = True
-		
-		if self.jobDefinition.grayscaleChecked and not img.isGrayscale():
-			img = img.convertToFormat(QImage.Format_Grayscale8)
-			#img = img.convertToFormat(QImage.Format_Grayscale16)
-			anyChanges = True
-		
-		if anyChanges:
-			img.save(link, quality = self.jobDefinition.imageQuality)
-	
-	def rename_image(self, link):
-		if self.jobDefinition.renameChecked:
-			renamed_link = self.get_rename_filename(link)
-			os.rename(link, renamed_link)
-			return renamed_link
-			
-		return link
 	
 	def get_rename_filename(self, current_path):
 		file_path, file_name = os.path.split(current_path)
@@ -202,9 +244,9 @@ class Runnable(QRunnable):
 		for imagePath in processed_files:
 			os.remove(imagePath)
 	
-	def gen_new_cbz_filename(self):
+	def gen_new_container_name(self):
 		ct = datetime.datetime.now() # current time
-		return "DropBatch_%s.cbz"%(ct.strftime("%Y%m%d_%H%M%S"),)
+		return "DropBatch_%s"%(ct.strftime("%Y%m%d_%H%M%S"),)
 	
 	def show_error_message(self, error_type, error_description):
 		msg = QMessageBox()
@@ -228,7 +270,7 @@ class DropBatch(QMainWindow):
 		windowLayout = QVBoxLayout()
 		centralWidget.setLayout(windowLayout)
 		
-		warningLabel = QLabel("Converted files will be saved\nnext to dropped files")
+		warningLabel = QLabel("DRAG AND DROP FILES HERE!!!\nConverted files will be saved\nnext to dropped files")
 		warningLabel.setStyleSheet("color: darkblue; font-weight: bold")
 		warningLabel.setAlignment(Qt.AlignCenter)
 		windowLayout.addWidget(warningLabel, 2)
