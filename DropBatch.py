@@ -121,7 +121,8 @@ class Runnable(QRunnable):
 		if files_count < 1:
 			return
 		
-		os.mkdir(target_folder)
+		if not os.path.exists(target_folder):
+			os.mkdir(target_folder)
 		
 		self.statusLabel.setText("%04d/%04d"%(0, files_count,))
 		
@@ -132,7 +133,7 @@ class Runnable(QRunnable):
 	
 	def process_all_folders(self):
 		for folder in self.dropped_folders:
-			self.process_folder(folder)
+			self.process_folder(folder, "%s_%s"%(folder, self.gen_new_container_name(),))
 		
 	def process_all_cbz(self):
 		for cbz in self.dropped_cbz:
@@ -146,7 +147,8 @@ class Runnable(QRunnable):
 			target_link = self.get_rename_filename(target_link)
 		
 		if not self.jobDefinition.grayscaleChecked and not self.jobDefinition.resizeChecked:
-			shutil.copy(link, target_link)
+			if not os.path.exists(target_link):
+				shutil.copy(link, target_link)
 			return
 		
 		img = QImage(link)
@@ -168,40 +170,34 @@ class Runnable(QRunnable):
 		
 		if anyChanges:
 			img.save(target_link, quality = self.jobDefinition.imageQuality)
-		else:
+		elif not os.path.exists(target_link):
 			shutil.copy(link, target_link)
 	
-	def process_folder(self, folder_link):
+	def process_folder(self, folder_link, target_folder):
 		self.dropped_images = self.get_folder_images(folder_link)
 		
 		if len(self.dropped_images) < 1:
 			return
 		
-		target_folder = "%s_%s"%(folder_link, self.gen_new_container_name(),)
 		self.process_all_images(target_folder)
 		
 		self.save_folder_content_as_cbz(target_folder, target_folder + ".cbz")
 	
 	def process_cbz(self, link):
 		file_path, file_name = os.path.split(link)
-		temp_dir = "tmp_%s"%(file_name,)
+		file_name, file_ext = os.path.splitext(file_name)
+		target_dir = "%s_%s"%(file_name, self.gen_new_container_name(),)
+		temp_dir = "tmp_%s"%(target_dir,)
+		target_path = os.path.join(file_path, target_dir)
 		temp_path = os.path.join(file_path, temp_dir)
 		
-		namelist = []
-		
 		with zipfile.ZipFile(link, 'r') as myzip:
-			namelist = myzip.namelist()
 			myzip.extractall(temp_path)
 		
-		os.chdir(temp_path)
-		
-		with zipfile.ZipFile(link, 'w') as myzip:
-			for imagePath in namelist:
-				self.process_image(imagePath)
-				myzip.write(imagePath)
-		
+		self.jobDefinition.createCbzChecked = True
+		self.process_folder(temp_path, target_path)
+				
 		os.chdir(file_path)
-		
 		shutil.rmtree(temp_path)
 	
 	def get_rename_filename(self, current_path):
