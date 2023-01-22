@@ -1,7 +1,7 @@
 # Requires Python 3.5+ and PyQt5 installed!
 # pip install PyQt5
 
-import sys, os, re, glob, zipfile, shutil, datetime
+import sys, os, re, glob, zipfile, shutil, datetime, pathlib
 
 from PyQt5.QtWidgets import (
 	QApplication,
@@ -142,6 +142,12 @@ class Runnable(QRunnable):
 		file_path, file_name = os.path.split(link)
 		
 		subfolders = os.path.relpath(file_path, self.parent_directory)
+		
+		if subfolders != ".": # images in directory or subdirectories
+			# remove the first directory from path
+			# because target_dir is created in it's stead
+			p = pathlib.Path(subfolders)
+			subfolders = str(pathlib.Path(*p.parts[1:]))
 		
 		target_link = os.path.join(target_dir, subfolders)
 		os.makedirs(target_link, exist_ok = True)
